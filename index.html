@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do App</title>
+  <meta name="theme-color" content="#5c6bc0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="To-Do">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.svg">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      height: fit-content;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .status-bar {
+      text-align: center;
+      margin-bottom: 20px;
+      min-height: 22px;
+    }
+
+    .status-pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .status-pill.online  { background: #e8f5e9; color: #2e7d32; }
+    .status-pill.offline { background: #fdecea; color: #c62828; }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .input-row input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-row input:focus { border-color: #5c6bc0; }
+
+    .input-row button {
+      padding: 10px 18px;
+      background: #5c6bc0;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .input-row button:hover { background: #3f51b5; }
+
+    .owner-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      align-items: center;
+    }
+
+    .owner-row label {
+      font-size: 0.9rem;
+      color: #555;
+      white-space: nowrap;
+    }
+
+    .owner-row select {
+      flex: 1;
+      padding: 10px 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .owner-row select:focus { border-color: #5c6bc0; }
+
+    .filters, .owner-filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .owner-filters { margin-bottom: 16px; }
+
+    .filters button, .owner-filters button {
+      flex: 1;
+      padding: 6px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      color: #555;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filters button.active, .owner-filters button.active {
+      border-color: #5c6bc0;
+      color: #5c6bc0;
+      font-weight: 600;
+    }
+
+    ul { list-style: none; }
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+      animation: fadeIn 0.2s ease;
+    }
+
+    li:last-child { border-bottom: none; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    li input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #5c6bc0;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    li .task-text {
+      flex: 1;
+      font-size: 1rem;
+      color: #333;
+      word-break: break-word;
+    }
+
+    li.done .task-text {
+      text-decoration: line-through;
+      color: #aaa;
+    }
+
+    li button.delete {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 1.2rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    li button.delete:hover { color: #e53935; background: #fdecea; }
+
+    .owner-badge {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .owner-badge.heike { background: #fce4ec; color: #c2185b; }
+    .owner-badge.armin { background: #e3f2fd; color: #1565c0; }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      font-size: 0.85rem;
+      color: #999;
+    }
+
+    .footer button {
+      background: none;
+      border: none;
+      color: #e53935;
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0;
+    }
+
+    .footer button:hover { text-decoration: underline; }
+
+    .empty {
+      text-align: center;
+      color: #bbb;
+      padding: 32px 0;
+      font-size: 0.95rem;
+    }
+
+    .loading {
+      text-align: center;
+      color: #bbb;
+      padding: 32px 0;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #eee;
+      border-top-color: #5c6bc0;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 8px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Meine Aufgaben</h1>
+
+    <div class="status-bar">
+      <span id="statusPill" class="status-pill"></span>
+    </div>
+
+    <div class="input-row">
+      <input type="text" id="taskInput" placeholder="Neue Aufgabe eingeben..." />
+      <button id="addBtn">Hinzufügen</button>
+    </div>
+
+    <div class="owner-row">
+      <label for="ownerSelect">Zuständig:</label>
+      <select id="ownerSelect">
+        <option value="Heike">Heike</option>
+        <option value="Armin">Armin</option>
+      </select>
+    </div>
+
+    <div class="filters">
+      <button class="active" data-filter="all">Alle</button>
+      <button data-filter="open">Offen</button>
+      <button data-filter="done">Erledigt</button>
+    </div>
+
+    <div class="owner-filters">
+      <button class="active" data-owner="all">Alle</button>
+      <button data-owner="Heike">Heike</button>
+      <button data-owner="Armin">Armin</button>
+    </div>
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <div>Verbinde mit Firebase…</div>
+    </div>
+
+    <ul id="taskList"></ul>
+    <p class="empty" id="emptyMsg" style="display:none">Keine Aufgaben vorhanden.</p>
+
+    <div class="footer">
+      <span id="counter"></span>
+      <button id="clearDoneBtn">Erledigte entfernen</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+    import {
+      initializeFirestore,
+      persistentLocalCache,
+      collection,
+      onSnapshot,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      doc,
+      query,
+      orderBy,
+      serverTimestamp,
+      writeBatch
+    } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQ8FkX-NffLfemn1eGz7ggzo5X__F-9jk",
+      authDomain: "meine-todo-app-d5195.firebaseapp.com",
+      projectId: "meine-todo-app-d5195",
+      storageBucket: "meine-todo-app-d5195.firebasestorage.app",
+      messagingSenderId: "973337143194",
+      appId: "1:973337143194:web:df95c5f494bb4f8602fc23"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = initializeFirestore(app, { localCache: persistentLocalCache() });
+
+    // --- State ---
+    let tasks       = [];
+    let filter      = 'all';
+    let ownerFilter = 'all';
+    let firstLoad   = true;
+
+    // --- DOM ---
+    const taskInput   = document.getElementById('taskInput');
+    const ownerSelect = document.getElementById('ownerSelect');
+    const taskList    = document.getElementById('taskList');
+    const emptyMsg    = document.getElementById('emptyMsg');
+    const loadingEl   = document.getElementById('loading');
+    const statusPill  = document.getElementById('statusPill');
+    const counter     = document.getElementById('counter');
+
+    // --- Online/Offline-Anzeige ---
+    function updateStatus() {
+      if (navigator.onLine) {
+        statusPill.textContent = 'Online · Daten werden synchronisiert';
+        statusPill.className   = 'status-pill online';
+      } else {
+        statusPill.textContent = 'Offline · Änderungen werden gespeichert sobald du wieder online bist';
+        statusPill.className   = 'status-pill offline';
+      }
+    }
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    updateStatus();
+
+    // --- Firestore Echtzeit-Listener ---
+    const todosRef = collection(db, 'todos');
+    const q        = query(todosRef, orderBy('createdAt'));
+
+    onSnapshot(q, snapshot => {
+      tasks = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (firstLoad) {
+        loadingEl.style.display = 'none';
+        firstLoad = false;
+      }
+      render();
+    });
+
+    // --- Aufgaben-Operationen ---
+    async function addTask() {
+      const text  = taskInput.value.trim();
+      const owner = ownerSelect.value;
+      if (!text) return;
+      taskInput.value = '';
+      await addDoc(todosRef, { text, done: false, owner, createdAt: serverTimestamp() });
+    }
+
+    async function toggleTask(id) {
+      const t = tasks.find(t => t.id === id);
+      if (t) await updateDoc(doc(db, 'todos', id), { done: !t.done });
+    }
+
+    async function deleteTask(id) {
+      await deleteDoc(doc(db, 'todos', id));
+    }
+
+    async function clearDone() {
+      const done = tasks.filter(t => t.done);
+      if (!done.length) return;
+      const batch = writeBatch(db);
+      done.forEach(t => batch.delete(doc(db, 'todos', t.id)));
+      await batch.commit();
+    }
+
+    // --- Filter ---
+    document.querySelector('.filters').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-filter]');
+      if (!btn) return;
+      filter = btn.dataset.filter;
+      document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    });
+
+    document.querySelector('.owner-filters').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-owner]');
+      if (!btn) return;
+      ownerFilter = btn.dataset.owner;
+      document.querySelectorAll('.owner-filters button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    });
+
+    // --- Events ---
+    document.getElementById('addBtn').addEventListener('click', addTask);
+    taskInput.addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+    document.getElementById('clearDoneBtn').addEventListener('click', clearDone);
+
+    taskList.addEventListener('change', e => {
+      if (e.target.type === 'checkbox') toggleTask(e.target.closest('li').dataset.id);
+    });
+
+    taskList.addEventListener('click', e => {
+      const btn = e.target.closest('button.delete');
+      if (btn) deleteTask(btn.closest('li').dataset.id);
+    });
+
+    // --- Render ---
+    function render() {
+      const visible = tasks.filter(t => {
+        const statusOk = filter === 'all' ? true : filter === 'open' ? !t.done : t.done;
+        const ownerOk  = ownerFilter === 'all' || t.owner === ownerFilter;
+        return statusOk && ownerOk;
+      });
+
+      taskList.innerHTML = '';
+      visible.forEach(t => {
+        const li = document.createElement('li');
+        if (t.done) li.classList.add('done');
+        li.dataset.id = t.id;
+        const ownerClass = t.owner ? t.owner.toLowerCase() : '';
+        li.innerHTML = `
+          <input type="checkbox" ${t.done ? 'checked' : ''}>
+          <span class="task-text">${escapeHtml(t.text)}</span>
+          ${t.owner ? `<span class="owner-badge ${ownerClass}">${escapeHtml(t.owner)}</span>` : ''}
+          <button class="delete" title="Löschen">&#x2715;</button>
+        `;
+        taskList.appendChild(li);
+      });
+
+      const open = tasks.filter(t => !t.done).length;
+      counter.textContent = `${open} offen · ${tasks.length} gesamt`;
+      emptyMsg.style.display = visible.length === 0 && !firstLoad ? 'block' : 'none';
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // --- Service Worker registrieren ---
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .catch(err => console.warn('Service Worker Fehler:', err));
+    }
+  </script>
+</body>
+</html>

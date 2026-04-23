@@ -1,0 +1,14 @@
+{
+  "name": "Meine To-Do App",
+  "short_name": "To-Do",
+  "description": "Aufgaben für Heike und Armin",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#5c6bc0",
+  "icons": [
+    { "src": "icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
